@@ -1,0 +1,2 @@
+CRC SHA - Directory - 7zip - Tools - options - 7-Zip ZS - uncheck HASH
+Add or remove programs - uninstall skype
