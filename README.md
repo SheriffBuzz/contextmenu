@@ -6,6 +6,8 @@ Manage context menus by automating registry writes using ahk. Additional visual 
 
 [FileTypesMan](https://www.nirsoft.net/utils/file_types_manager.html) *Scroll to the bottom of the page for the download*
 
+[FileTypes in Windows](https://docs.microsoft.com/en-us/windows/win32/shell/fa-file-types)
+
 ## Best Practices when working with the Registry
  * [Backup your Windows Registry](https://support.microsoft.com/en-us/topic/how-to-back-up-and-restore-the-registry-in-windows-855140ad-e318-2a13-2829-d428a2ab0692)
 
@@ -18,7 +20,31 @@ Manage context menus by automating registry writes using ahk. Additional visual 
   * Automate registry writes via script instead of using RegEdit or 3rd Party programs
     * Don't need to use GUI every time on each device when working with multiple devices
   * Allow storing configuration details for ahk scripts and icon files in non-absolute paths
-  
+
+# Project setup
+Find below the project setup and structure.
+  * Clone the project to any location.
+  * Open [settings.ini](/settings.ini)
+    * Expand environment variables - 0 or 1. Determines what is stored in the "command" registry key. If you specify a program path %SYSTEMDRIVE%\Program Files\SomeProgram\SomeExecutable.exe with the flag on, it will be expanded to C:\Program Files\SomeProgram\SomeExecutable.exe where "C:" is the value of SYSTEMDRIVE.
+  * [\resources](/resources) - stores context menu options as csv
+    * [HKEY_CLASSES_ROOT_AllFileExt.csv](/resources/HKEY_CLASSES_ROOT_AllFileExt.csv)
+      * Context menu when right clicking a file of any extension
+    * [HKEY_CLASSES_ROOT_Directory.csv](/resources/HKEY_CLASSES_ROOT_Directory.csv)
+      * Context menu when right clicking a folder
+    * [HKEY_CLASSES_ROOT_DictoryBackground.csv](/resources/HKEY_CLASSES_ROOT_DirectoryBackground.csv)
+      * Context menu when right clicking the empty space in a folder
+    * [HKEY_CLASSES_ROOT_IconsOnly.csv](/resources/HKEY_CLASSES_ROOT_IconsOnly.csv)
+      * Change icons for file extensions, system-wide.
+      * Only takes affect after system restart or calling [SHChangeNotify](https://docs.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shchangenotify). You can also open a file extension in [FileTypesMan](https://www.nirsoft.net/utils/file_types_manager.html) and click ok on the popup without changing anything, which calls this function.
+      * Icon is affected by Default programs/User Choice. to avoid changing the icon for all associated file types see, [**Detach file extension from user choice**](#detach-file-extension-from-user-choice)
+    * [HKEY_CLASSES_ROOT_NewFile.csv](/resources/HKEY_CLASSES_ROOT_NewFile.csv)
+      * Context menu when clicking "New " Dialog when right clicking in the empty space of a folder
+    * [\ico](/resources/ico)
+      * [\ext](/resources/ico/ext)
+        * stores .ico files for [WriteContextMenuIconsOnly.ahk](/WriteContextMenuIconsOnly.ahk), for changing icons for file types, system-wide
+      * Location to store .ico files that can be used in our csv config without specifying an absolute path. Otherwise, we need to point to absolute file paths.
+  * [\bin](/bin) - location for compiled ahk scripts and other executables. Can refer to a file name + extension in our csv config if programs are stored here, otherwise they must be referred to by an absolute path or one with environment variables
+
 # Add context menu entry for a specific file type
   * Menu entry will appear at the top of the context menu, above any entries that are defined for all file extensions
   * Certain file extensions get associated with an application, often called user choice. The way it is set up in Windows 8+ makes it harder to edit the registry directly, as described [here](https://stackoverflow.com/a/27004486)
@@ -60,5 +86,19 @@ Now the menu option will be on top.
 
 ![image](https://user-images.githubusercontent.com/83767022/179376935-009294c2-b642-48b7-9d51-2131814d2c97.png)
 
+# Detach file extension from User Choice
+To avoid changing the icon or adding context menu items for all file extensions associated with a User Choice, remove User Choice using [FileTypesMan](https://www.nirsoft.net/utils/file_types_manager.html). Optionally change the [FileType](https://docs.microsoft.com/en-us/windows/win32/shell/fa-file-types) if multiple extensions share the same file type.
 
-  
+1) Open the ext in FileTypesMan and click the ... for User Choice. Click *Detach File Type*.
+   * You may get an error, but it should still work.
+
+2) Open RegEdit and navigate to **Computer\HKEY_CLASSES_ROOT\\.{extension}**
+3) For the default key, rename it to something else, commonly {extension}file or .{extension}_auto_file
+4) Create a new key under **Computer\HKEY_CLASSES_ROOT** with the same name
+5) Run [WriteContextMenu.ahk](/WriteContextMenu.ahk), or follow the steps for [**Add Context menu entry for a specific file type**](#add-context-menu-entry-for-a-specific-file-type) again.
+   * The script will write context menu entries or icons to the new handler. Other file extensions that use the old handler will be unaffected.
+   * Only takes affect after system restart or calling [SHChangeNotify](https://docs.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shchangenotify). You can also open a file extension in [FileTypesMan](https://www.nirsoft.net/utils/file_types_manager.html) and click ok on the popup without changing anything, which calls this function.
+
+https://user-images.githubusercontent.com/83767022/179415439-e0eefc9e-f894-4afc-93bf-2c65ba8f10ce.mp4
+
+https://user-images.githubusercontent.com/83767022/179416028-a466f453-33f2-49cc-82c3-983db2746d74.mp4

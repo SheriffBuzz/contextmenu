@@ -1,5 +1,5 @@
 KeyName,Command,Icon,ContextMenuName
 cmd2,"""%SYSTEMROOT%\system32\cmd.exe"" /s /k pushd ""%V""",%SYSTEMROOT%\System32\cmd.exe,Open with cmd
 zCopy aPath,"CopyFilepath.exe ""%V""",%SYSTEMROOT%\system32\SnippingTool.exe,Copy Path
-zCopy FolderName,CopyFolderName.exe ""%V""",%SYSTEMROOT%\system32\SnippingTool.exe,Copy Name
+zCopy FolderName,"CopyFolderName.exe ""%V""",%SYSTEMROOT%\system32\SnippingTool.exe,Copy Name
 z5P4V Workspace Tree,"P4RevealInWorkspace.exe ""%V""",p4v.ico,P4V Workspace Tree
