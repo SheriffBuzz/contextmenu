@@ -9,7 +9,7 @@ Manage context menus by automating registry writes using ahk. Additional visual 
 ## Best Practices when working with the Registry
  * [Backup your Windows Registry](https://support.microsoft.com/en-us/topic/how-to-back-up-and-restore-the-registry-in-windows-855140ad-e318-2a13-2829-d428a2ab0692)
 
- * If you download registry (.reg) scripts from the internet, open then in a text editor and inspect the keys they are modifying, before running them. This script modifies registry keys that have the following patterns:
+ * If you download registry (.reg) scripts from the internet, open them in a text editor and inspect the keys they are modifying, before running them. This script modifies registry keys that have the following patterns:
    * **Computer\HKEY_CLASSES_ROOT\*\shell** - Context menu when right clicking a file of any extension
    * **Computer\HKEY_CLASSES_ROOT\\.{fileExtension}\shell** - Context menu when right clicking a file of a specific extension
    * **Computer\HKEY_CLASSES_ROOT\Directory\shell** - Context menu when right clicking a folder
@@ -31,10 +31,10 @@ Manage context menus by automating registry writes using ahk. Additional visual 
     
 The easy way around this is to use [FileTypesMan](https://www.nirsoft.net/utils/file_types_manager.html)
 
-1) Navigate to the extension
+1) Navigate to the extension and click on it, so it is selected in the top view
 2) Right Click the bottom menu -> New Action
 3) Give a name, and command as "C:\Program Files\HandBrake\HandBrake.exe" "%1".
-   * *"%1" refers to the file/folder path that will be passed to the application.*
+   * *"%1" specifies that the file/folder path selected in Windows Explorer will be passed to the application.*
    * Alternatively, select the program from the list of running programs.
 4) Optionally select the path of an .ico or .exe to set the icon
 
@@ -49,8 +49,10 @@ If you already have menu entries for the same extension, the one you add might n
 ![image](https://user-images.githubusercontent.com/83767022/179375947-0563795f-4dc1-438d-987d-92ea8096267a.png)
 
 1) Click on the key on the explorer view (left side of registry editor). For our demo it will be "Open with Handbrake"
+   * Make sure the key that is selected is the name of the action, not "shell" or "command"
 2) Double click the "Default" key in the right hand side. Set the value to what you want to be displayed on the context menu.
-3) Right click on the key you want to be at the top, and prepend it with a number or special character so it comes first alphabetically.
+3) On the left side in the explorer view, right click on the key you want to be at the top, and prepend it with a number or special character so it comes first alphabetically.
+   * Make sure the key that is selected is the name of the action, not "shell" or "command"
 
 https://user-images.githubusercontent.com/83767022/179377027-da54d134-4f0d-46a3-9e05-1be1980efc96.mp4
 
