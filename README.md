@@ -97,7 +97,7 @@ To avoid changing the icon or adding context menu items for all file extensions 
 4) Create a new key under **Computer\HKEY_CLASSES_ROOT** with the same name
 5) Run [WriteContextMenu.ahk](/WriteContextMenu.ahk), or follow the steps for [**Add Context menu entry for a specific file type**](#add-context-menu-entry-for-a-specific-file-type) again.
    * The script will write context menu entries or icons to the new handler. Other file extensions that use the old handler will be unaffected.
-   * Only takes affect after system restart or calling [SHChangeNotify](https://docs.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shchangenotify). You can also open a file extension in [FileTypesMan](https://www.nirsoft.net/utils/file_types_manager.html) and click ok on the popup without changing anything, which calls this function.
+   * Only takes effect after system restart or calling [SHChangeNotify](https://docs.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shchangenotify). You can also open a file extension in [FileTypesMan](https://www.nirsoft.net/utils/file_types_manager.html) and click ok on the popup without changing anything, which calls this function.
 
 https://user-images.githubusercontent.com/83767022/179415439-e0eefc9e-f894-4afc-93bf-2c65ba8f10ce.mp4
 
