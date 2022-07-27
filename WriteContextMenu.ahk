@@ -185,15 +185,39 @@ WriteContextMenuFromCsv(keyPath, filePath) {
 	FileRead, csv, %filePath%
 	data:= csvToHeaderAndData(csv, true).data
 	for i, row in data {
+		extensions:=
 		if (row.count() < 1) {
 			continue
 		}
-		if (row.count() != 4) {
-			Msgbox, % "Error reading csv: " filePath ".`n`nRow " i " has invalid number of columns (" row.count() "). Each row should have 3 commas for 4 columns.`nKeyName,Command,Icon,ContextMenuNamekeyName"
-			ExitApp
+		if (keyPath = REGISTRY_KEY_ALL_FILE_EXT) {
+			if (row.count() != 5) {
+				Msgbox, % "Error reading csv: " filePath ".`n`nRow " i " has invalid number of columns (" row.count() "). Each row should have 4 commas for 5 columns.`nKeyName,Command,Icon,ContextMenuNamekeyName,Extension"
+				ExitApp
+			}
+		} else {
+			if (row.count() != 4) {
+				Msgbox, % "Error reading csv: " filePath ".`n`nRow " i " has invalid number of columns (" row.count() "). Each row should have 3 commas for 4 columns.`nKeyName,Command,Icon,ContextMenuNamekeyName"
+				ExitApp
+			}
 		}
+		
+
 		try {
-			WriteContextMenuEntry(keyPath, row[1], row[2], row[3], row[4])
+			
+			extensions:= row[5]
+			if (extensions) {
+				extensionsSplit:= StrSplit(extensions, "|")
+				for j, extension in extensionsSplit {
+					if (!InStr(extension, "`.")) {
+						throw "Cant parse extensions. Should be pipe delimited in the form `.{ext}"
+					}
+					fileType:= CreateOrUpdateFileType(extension)
+					WriteContextMenuEntry("HKCR\" fileType "\shell\", row[1], row[2], row[3], row[4])
+				}
+			} else {
+				WriteContextMenuEntry(keyPath, row[1], row[2], row[3], row[4])
+			}
+
 		} catch e {
 			if (e.what = "RegWrite") {
 				Msgbox, % "Unexpected error on RegWrite command. Check that script is run as administrator.`n`nhttps://www.autohotkey.com/docs/commands/RegWrite.htm"
@@ -202,6 +226,43 @@ WriteContextMenuFromCsv(keyPath, filePath) {
 			Msgbox, % "Error found on row " i " in :`n`t" filePath "`n`n`n" e
 		}
 	}
+}
+
+GetFileTypeName(ext) {
+	extKey:= "HKCR\" ext
+	return RegRead(extKey)
+}
+
+/*
+	CreateOrUpdateFileType
+	Creates or returns the filetype associated with a file extension.
+
+	Remarks
+		- does not change user choice. up to the user to override with FileTypesMan
+		- only use when "Open" key handling is set up or is not needed.
+			- /TODO support open key in our csv to specify open logic
+
+
+	@param ext - ext in the format .{ext} example is .txt
+	@return fileType name.
+*/
+CreateOrUpdateFileType(ext) {
+	if (ext = "") {
+		throw "GetOrCreateFileTypeHandler - ext param is blank"
+	}
+	fileType:= getFileTypeName(ext)
+	if (fileType = "") {
+		fileType:= ""
+		fileType:= StrReplace(ext, ".", "") "file"
+		RegWrite("HKCR\" ext,, fileType,, false, true) ;here we can create the new ext key if doesnt exist, but still dont overwrite if it exists. Creating new ext will be rare, but might be useful so you can run the script before programs that use those ext's are downloaded
+		createFileType(fileType)
+	}
+
+	return fileType
+}
+
+createFileType(fileType) {
+	RegWrite, REG_SZ, % "HKCR\" fileType
 }
 
 WriteContextMenuNewFileFromCsv() {

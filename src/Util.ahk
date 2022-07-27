@@ -171,3 +171,17 @@ RegRead(key, value="") {
 	}
 	return result
 }
+
+RegWrite(key, valueName="", value="", valueType="REG_SZ", overwrite=true, createNew=false) {
+	existing:= RegRead(key, valueName)
+	if (existing) {
+		if (!overwrite) {
+			return
+		}
+	}
+	if (!existing && !createNew) {
+		return
+	}
+
+	RegWrite, %valueType%, %key%, %valueName%, %value%
+}
