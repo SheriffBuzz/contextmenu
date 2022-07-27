@@ -1,7 +1,7 @@
-KeyName,Command,Icon,ContextMenuName,Extensions(pipe delimited)
-Notepad,C:\Windows\System32\notepad.exe,,,
-SciTE4,"""C:\Program Files\AutoHotkey\SciTE\SciTE.exe"" %1",,,
-!Notepad++,"""C:\Program Files\Notepad++\notepad++.exe""",,Notepad++,
-Excel,"""C:\Program Files (x86)\Microsoft Office\root\Office16\EXCEL.exe""",,,
-z1Copy Path,"CopyFilepath.exe ""%V""",%SYSTEMDRIVE%\WINDOWS\system32\SnippingTool.exe,Copy Path,
-z2Copy Name,CopyFilenameNoExt.exe,%SYSTEMDRIVE%\WINDOWS\system32\SnippingTool.exe,Copy Name,
+KeyName,Command,Icon,ContextMenuName,Extensions(pipe delimited),UserChoice
+Notepad,C:\Windows\System32\notepad.exe,,,,
+SciTE4,"""C:\Program Files\AutoHotkey\SciTE\SciTE.exe"" %1",,,,
+!Notepad++,"""C:\Program Files\Notepad++\notepad++.exe""",,Notepad++,,
+Excel,"""C:\Program Files (x86)\Microsoft Office\root\Office16\EXCEL.exe""",,,,
+z1Copy Path,"CopyFilepath.exe ""%V""",%SYSTEMDRIVE%\WINDOWS\system32\SnippingTool.exe,Copy Path,,
+z2Copy Name,CopyFilenameNoExt.exe,%SYSTEMDRIVE%\WINDOWS\system32\SnippingTool.exe,Copy Name,,

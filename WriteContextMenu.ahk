@@ -234,8 +234,8 @@ WriteContextMenuFromCsv(keyPath, filePath) {
 			continue
 		}
 		if (keyPath = REGISTRY_KEY_ALL_FILE_EXT) {
-			if (row.count() != 5) {
-				Msgbox, % "Error reading csv: " filePath ".`n`nRow " i " has invalid number of columns (" row.count() "). Each row should have 4 commas for 5 columns.`nKeyName,Command,Icon,ContextMenuNamekeyName,Extension"
+			if (row.count() != 6) {
+				Msgbox, % "Error reading csv: " filePath ".`n`nRow " i " has invalid number of columns (" row.count() "). Each row should have 5 commas for 6 columns.`nKeyName,Command,Icon,ContextMenuNamekeyName,Extension,UserChoice"
 				ExitApp
 			}
 		} else {
@@ -249,20 +249,25 @@ WriteContextMenuFromCsv(keyPath, filePath) {
 		try {
 			
 			extensions:= row[5]
-			if (extensions) {
-				extensionsSplit:= StrSplit(extensions, "|")
-				for j, extension in extensionsSplit {
-					if (!InStr(extension, "`.")) {
-						throw "Cant parse extensions. Should be pipe delimited in the form `.{ext}"
-					}
-					fileType:= CreateOrUpdateFileType(extension)
-					DeleteUserChoice(extension) ;if you are altering a specific extension, it is assumed that user choice isn't used. set default programs and custom context menu actions.
-					WriteContextMenuEntry("HKCR\" fileType "\shell\", row[1], row[2], row[3], row[4])
-				}
-			} else {
-				WriteContextMenuEntry(keyPath, row[1], row[2], row[3], row[4])
-			}
+			userChoice:= row[6]
 
+			if (userChoice) {
+						WriteContextMenuEntry("HKCR\" userChoice "\shell\", row[1], row[2], row[3], row[4])
+			} else {
+				if (extensions) {
+					extensionsSplit:= StrSplit(extensions, "|")
+					for j, extension in extensionsSplit {
+						if (!InStr(extension, "`.")) {
+							throw "Cant parse extensions. Should be pipe delimited in the form `.{ext}"
+						}
+						fileType:= CreateOrUpdateFileType(extension, true)
+							DeleteUserChoice(extension) ;if you are altering a specific extension, it is assumed that user choice isn't used. set default programs and custom context menu actions.
+							WriteContextMenuEntry("HKCR\" fileType "\shell\", row[1], row[2], row[3], row[4])
+					}
+				} else {
+					WriteContextMenuEntry(keyPath, row[1], row[2], row[3], row[4])
+				}
+			}
 		} catch e {
 			if (e.what = "RegWrite") {
 				Msgbox, % "Unexpected error on RegWrite command. Check that script is run as administrator.`n`nhttps://www.autohotkey.com/docs/commands/RegWrite.htm"
@@ -298,15 +303,15 @@ GetFileTypePath(ext) {
 	@param ext - ext in the format .{ext} example is .txt
 	@return fileType name.
 */
-CreateOrUpdateFileType(ext) {
+CreateOrUpdateFileType(ext, force=true) {
 	if (ext = "") {
 		throw "GetOrCreateFileTypeHandler - ext param is blank"
 	}
 	fileType:= getFileTypeName(ext)
-	if (fileType = "") {
+	if (fileType = "" || force = true) {
 		fileType:= ""
 		fileType:= StrReplace(ext, ".", "") FILETYPE_SUFFIX
-		RegWrite("HKCR\" ext,, fileType,, false, true) ;here we can create the new ext key if doesnt exist, but still dont overwrite if it exists. Creating new ext will be rare, but might be useful so you can run the script before programs that use those ext's are downloaded
+		RegWrite("HKCR\" ext,, fileType,, force, true) ;here we can create the new ext key if doesnt exist, but still dont overwrite if it exists. Creating new ext will be rare, but might be useful so you can run the script before programs that use those ext's are downloaded
 		createFileType(fileType)
 	}
 
@@ -343,8 +348,11 @@ getCommandForFileExtension(extension, actionKeyOrCommand) {
 }
 
 DeleteUserChoice(extension) {
-	key:= "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\" extension "\UserChoice"
-	RegDelete(key)
+	extPath:= "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\" extension
+	userChoice:= extPath "\UserChoice"
+	RegDelete(extPath) ;prompts user to pick
+	;RegDelete(userChoice)
+
 }
 
 /*
