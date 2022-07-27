@@ -212,6 +212,7 @@ WriteDefaultOpenActionFromCsv() {
 						throw "Cant parse extensions. Should be pipe delimited in the form `.{ext}"
 					}
 					fileType:= CreateOrUpdateFileType(extension)
+					DeleteUserChoice(extension) ;if you are altering a specific extension, it is assumed that user choice isn't used. set default programs and custom context menu actions.
 					WriteDefaultOpenAction(extension, row[2])
 				}
 			}
@@ -255,6 +256,7 @@ WriteContextMenuFromCsv(keyPath, filePath) {
 						throw "Cant parse extensions. Should be pipe delimited in the form `.{ext}"
 					}
 					fileType:= CreateOrUpdateFileType(extension)
+					DeleteUserChoice(extension) ;if you are altering a specific extension, it is assumed that user choice isn't used. set default programs and custom context menu actions.
 					WriteContextMenuEntry("HKCR\" fileType "\shell\", row[1], row[2], row[3], row[4])
 				}
 			} else {
@@ -341,7 +343,7 @@ getCommandForFileExtension(extension, actionKeyOrCommand) {
 }
 
 DeleteUserChoice(extension) {
-	key:= "Computer\HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\" extension "\UserChoice"
+	key:= "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\" extension "\UserChoice"
 	RegDelete(key)
 }
 
