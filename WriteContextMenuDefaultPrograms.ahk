@@ -1,0 +1,2 @@
+﻿;Writes default programs. Used for when a filetype doesnt have any default open action outside its userchoice. We want to unlink user choice to define custom menu entries only for specific file types. Also unlinks user choice and shared file types, creatinga new filetype if necessary, that will only be used by one extension.
+Run, WriteContextMenu.ahk DefaultPrograms

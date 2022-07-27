@@ -30,11 +30,14 @@ global FILE_PATH_DIRECTORY_BACKGROUND:= FOLDER_PATH_RESOURCES "HKEY_CLASSES_ROOT
 
 global FILE_PATH_NEW_FILE:= FOLDER_PATH_RESOURCES "HKEY_CLASSES_ROOT_NewFile.csv"
 global FILE_PATH_ICONS_ONLY:= FOLDER_PATH_RESOURCES "HKEY_CLASSES_ROOT_IconsOnly.csv"
+global FILE_PATH_DEFAULT_PROGRAMS:= FOLDER_PATH_RESOURCES "DefaultPrograms.csv"
 
 
 global REGISTRY_KEY_ALL_FILE_EXT:= "HKCR\*\shell\"
 global REGISTRY_KEY_DIRECTORY:="HKCR\Directory\shell\"
 global REGISTRY_KEY_DIRECTORY_BACKGROUND:="HKCR\Directory\Background\shell\"
+
+global FILETYPE_SUFFIX:= "file" ;suffix for file extension. ie. if ext is ".csv", fileType is "csvfile". Used when creating new extensions, or unlinking file ext's from default programs to a new default program
 
 global EXPAND_ENVIRONMENT_VARIABLES:= ReadIniCfg(WORKING_DIRECTORY "\settings.ini", "settings", "ExpandEnvironmentVariables")
 
@@ -44,7 +47,9 @@ WriteContextMenu()
 WriteContextMenu() {
 		choice:= A_Args[1]
 		Traytip, WriteContextMenu, %choice%
-		if (choice = "AllFileExt") {
+		if (choice = "DefaultPrograms") {
+			WriteDefaultOpenActionFromCsv()
+		} else if (choice = "AllFileExt") {
 			WriteContextMenuFromCsv(REGISTRY_KEY_ALL_FILE_EXT, FILE_PATH_ALL_FILE_EXT)
 		} else if (choice = "Directory") {
 			WriteContextMenuFromCsv(REGISTRY_KEY_DIRECTORY, FILE_PATH_DIRECTORY)
@@ -55,6 +60,7 @@ WriteContextMenu() {
 		} else if (choice = "IconsOnly") {
 			WriteContextMenuIconsOnlyFromCsv()
 		} else {
+			WriteDefaultOpenActionFromCsv()
 			WriteContextMenuFromCsv(REGISTRY_KEY_ALL_FILE_EXT, FILE_PATH_ALL_FILE_EXT)
 			WriteContextMenuFromCsv(REGISTRY_KEY_DIRECTORY, FILE_PATH_DIRECTORY)
 			WriteContextMenuFromCsv(REGISTRY_KEY_DIRECTORY_BACKGROUND, FILE_PATH_DIRECTORY_BACKGROUND)
@@ -181,6 +187,33 @@ WriteContextMenuEntry(keyPath, keyName, command, icon="", contextMenuName="") {
 	;RegWrite, %command%, REG_EXPAND_SZ, %commandKey%,
 }
 
+
+WriteDefaultOpenActionFromCsv() {
+	filePath:= FILE_PATH_DEFAULT_PROGRAMS
+	FileRead, csv, %filePath%
+	data:= csvToHeaderAndData(csv, true).data
+	for i, row in data {
+		extensions:=
+		if (row.count() < 1) {
+			continue
+		}
+		if (row.count() != 2) {
+			Msgbox, % "Error reading csv: " filePath ".`n`nRow " i " has invalid number of columns (" row.count() "). Each row should have 1 comma for 2 columns.`nExtension,DefaultProgram"
+			ExitApp
+		}
+		
+
+		try {
+			WriteDefaultOpenAction(row[1], row[2])
+		} catch e {
+			if (e.what = "RegWrite") {
+				Msgbox, % "Unexpected error on RegWrite command. Check that script is run as administrator.`n`nhttps://www.autohotkey.com/docs/commands/RegWrite.htm"
+				exitapp
+			}
+			Msgbox, % "Error found on row " i " in :`n`t" filePath "`n`n`n" e
+		}
+	}
+}
 WriteContextMenuFromCsv(keyPath, filePath) {
 	FileRead, csv, %filePath%
 	data:= csvToHeaderAndData(csv, true).data
@@ -233,6 +266,13 @@ GetFileTypeName(ext) {
 	return RegRead(extKey)
 }
 
+GetFileTypePath(ext) {
+	fileType:= GetFileTypeName(ext)
+	if (fileType) {
+		return "HKCR\" fileType
+	}
+}
+
 /*
 	CreateOrUpdateFileType
 	Creates or returns the filetype associated with a file extension.
@@ -253,7 +293,7 @@ CreateOrUpdateFileType(ext) {
 	fileType:= getFileTypeName(ext)
 	if (fileType = "") {
 		fileType:= ""
-		fileType:= StrReplace(ext, ".", "") "file"
+		fileType:= StrReplace(ext, ".", "") FILETYPE_SUFFIX
 		RegWrite("HKCR\" ext,, fileType,, false, true) ;here we can create the new ext key if doesnt exist, but still dont overwrite if it exists. Creating new ext will be rare, but might be useful so you can run the script before programs that use those ext's are downloaded
 		createFileType(fileType)
 	}
@@ -263,6 +303,65 @@ CreateOrUpdateFileType(ext) {
 
 createFileType(fileType) {
 	RegWrite, REG_SZ, % "HKCR\" fileType
+}
+
+/*
+	GetCommandForFileExtension
+	Get given an extension and a command or shell action, get the value of command.
+	@param extension
+	@param actionKeyOrCommand - command, or shell action. can also be a keyname under HKCR\Applications
+
+	If actionKeyOrCommand contains ".exe", return actionKeyOrCommand. (use simple string match, so wont work if any of your actions have .exe in it for some reason)
+		Else, lookup fileType using HKCR\.{ext}\Default
+		Lookup action command using HKCR\filetype\shell\{actionKeyOrCommand}\command
+*/
+getCommandForFileExtension(extension, actionKeyOrCommand) {
+	if (InStr(actionKeyOrCommand, ".exe")) {
+		return actionKeyOrCommand
+	}
+
+	CreateOrUpdateFileType(extension)
+
+	fileTypePath:= GetFileTypePath(extension)
+	command:= RegRead(fileTypePath "\shell\" actionKeyOrCommand "\command")
+	if (!command) {
+		command:= RegRead("HKCR\*\shell\" actionKeyOrCommand "\command") ;attempt to read from global/AllExt actions if no action defined on filetype
+	}
+	return command
+}
+
+DeleteUserChoice(extension) {
+	key:= "Computer\HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\" extension "\UserChoice"
+	RegDelete(key)
+}
+
+/*
+	WriteDefaultOpenAction
+
+	Creates a new shell action to be used as default. changes filetype default key from blank to "open" or the name of the default action.
+
+	Purpose - after user choice is unhooked, filetype most likely wont have any default open action. You can still open the ext using another context menu entry, but double clicking the file in file explorer will either bring up the menu of associated programs, or throw an error (non standard file ext's that havent been opened in any program before)
+
+	Remarks - operation overwrites any existing "open" key
+			- unlinks user choice.
+			- if any fileType is there already and doesnt match {ext}{FILETYPE_SUFFIX}, create a new file type. (while user choice is unlinked, we could be inadvertently changing other file ext's if they share a filetype, which we dont want. If you want multiple ext's to have the same action, it is easy to define in AllFileExt.csv with extension field accepting multiple ext's, delimited by a pipe "|". The downside is that the action is defined on multiple filetype keys, so if you wanted to change it manually in RegEdit you would need to change it in multiple places. The upside is if you only change ext's via default programs csv, then you wont need any manual registry writes and the script will alter the actions in every ext they are defined, even if there are multiple. (And also the other exts associated with the previous filetype wont be changed inadvertently)
+			- if filetype is altered, it doesnt automatically create other keys (defaultIcon, shellNew) so run the other scripts again for changing ico's and new files. Does not delete old filetype (may be useful to keep it for troubleshooting)
+*/
+WriteDefaultOpenAction(extension, actionKeyOrCommand) {
+	fileType:= GetFileTypeName(extension)
+	rawExt:= StrReplace(extension, ".", "")
+	expectedFileType:= rawExt FILETYPE_SUFFIX
+	if (!(fileType = expectedFileType)) { ;we dont want to add actions to other file types if the filetype is shared between exts. See remarks for more details
+		createFileType(expectedFileType)
+		RegWrite("HKCR\" extension,, expectedFileType,, true)
+	}
+	fileTypePath:= GetFileTypePath(extension)
+	command:= getCommandForFileExtension(extension, actionKeyOrCommand)
+	defaultAction:= "open"
+	if (command) {
+		RegWrite(fileTypePath "\shell\" defaultAction "\command",,command,, true, true)
+		DeleteUserChoice(extension)
+	}
 }
 
 WriteContextMenuNewFileFromCsv() {
@@ -400,7 +499,7 @@ writeIconEntry(ext, add=true) {
 	procId:= RegRead(extKey)
 	if (!procId) {
 		;only for new icon, if it doesnt exist, create a new .ext key with a handler. Open with wont be set, but that may be added later (or can do in FileTypesMan)
-		RegWrite, REG_SZ, %extKey%,, % ext "FILE"
+		RegWrite, REG_SZ, %extKey%,, % ext FILETYPE_SUFFIX
 		procId:= RegRead(extKey)
 		if (!procId) {
 			throw "procId/Type name not found for extenstion " ext ". procId is the default value for the key " extKey ". To avoid pointing to a new procid key that doesnt have ""Open with"" set, make sure this key exists first."

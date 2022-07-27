@@ -185,3 +185,9 @@ RegWrite(key, valueName="", value="", valueType="REG_SZ", overwrite=true, create
 
 	RegWrite, %valueType%, %key%, %valueName%, %value%
 }
+
+RegDelete(key, valueName="") {
+	try {
+		RegDelete, %key%, %valueName%
+	}
+}

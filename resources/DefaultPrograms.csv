@@ -1,0 +1,2 @@
+Extension,DefaultProgram - Can be 1. batch command 2. default program shorthand (key name under HKCR\Applications) 3. Per ext Action (Key name under HKCR\{ext}\shell) 4. Global Action (Key name under HKCR\*\shell)
+.csv,!Notepad++
