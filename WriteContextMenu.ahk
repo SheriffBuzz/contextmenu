@@ -204,7 +204,17 @@ WriteDefaultOpenActionFromCsv() {
 		
 
 		try {
-			WriteDefaultOpenAction(row[1], row[2])
+			extensions:= row[1]
+			if (extensions) {
+				extensionsSplit:= StrSplit(extensions, "|")
+				for j, extension in extensionsSplit {
+					if (!InStr(extension, "`.")) {
+						throw "Cant parse extensions. Should be pipe delimited in the form `.{ext}"
+					}
+					fileType:= CreateOrUpdateFileType(extension)
+					WriteDefaultOpenAction(extension, row[2])
+				}
+			}
 		} catch e {
 			if (e.what = "RegWrite") {
 				Msgbox, % "Unexpected error on RegWrite command. Check that script is run as administrator.`n`nhttps://www.autohotkey.com/docs/commands/RegWrite.htm"
@@ -359,6 +369,7 @@ WriteDefaultOpenAction(extension, actionKeyOrCommand) {
 	command:= getCommandForFileExtension(extension, actionKeyOrCommand)
 	defaultAction:= "open"
 	if (command) {
+		RegWrite(fileTypePath "\shell\",,defaultAction,, true, true)
 		RegWrite(fileTypePath "\shell\" defaultAction "\command",,command,, true, true)
 		DeleteUserChoice(extension)
 	}
