@@ -197,8 +197,8 @@ WriteDefaultOpenActionFromCsv() {
 		if (row.count() < 1) {
 			continue
 		}
-		if (row.count() != 2) {
-			Msgbox, % "Error reading csv: " filePath ".`n`nRow " i " has invalid number of columns (" row.count() "). Each row should have 1 comma for 2 columns.`nExtension,DefaultProgram"
+		if (row.count() != 3) {
+			Msgbox, % "Error reading csv: " filePath ".`n`nRow " i " has invalid number of columns (" row.count() "). Each row should have 2 commas for 3 columns.`nExtension,DefaultProgram,fileType"
 			ExitApp
 		}
 		
@@ -211,9 +211,11 @@ WriteDefaultOpenActionFromCsv() {
 					if (!InStr(extension, "`.")) {
 						throw "Cant parse extensions. Should be pipe delimited in the form `.{ext}"
 					}
-					fileType:= CreateOrUpdateFileType(extension)
+					fileType:= row[3]
+					standardFileType:= (fileTYpe) ? false : true
+					fileType:= (fileType) ? updateFileType(extension, fileType) : CreateOrUpdateFileType(extension, true)
 					DeleteUserChoice(extension) ;if you are altering a specific extension, it is assumed that user choice isn't used. set default programs and custom context menu actions.
-					WriteDefaultOpenAction(extension, row[2])
+					WriteDefaultOpenAction(extension, row[2], standardFileType)
 				}
 			}
 		} catch e {
@@ -234,8 +236,8 @@ WriteContextMenuFromCsv(keyPath, filePath) {
 			continue
 		}
 		if (keyPath = REGISTRY_KEY_ALL_FILE_EXT) {
-			if (row.count() != 6) {
-				Msgbox, % "Error reading csv: " filePath ".`n`nRow " i " has invalid number of columns (" row.count() "). Each row should have 5 commas for 6 columns.`nKeyName,Command,Icon,ContextMenuNamekeyName,Extension,UserChoice"
+			if (row.count() != 7) {
+				Msgbox, % "Error reading csv: " filePath ".`n`nRow " i " has invalid number of columns (" row.count() "). Each row should have 6 commas for 7 columns.`nKeyName,Command,Icon,ContextMenuNamekeyName,Extension,UserChoice,FileType"
 				ExitApp
 			}
 		} else {
@@ -260,7 +262,8 @@ WriteContextMenuFromCsv(keyPath, filePath) {
 						if (!InStr(extension, "`.")) {
 							throw "Cant parse extensions. Should be pipe delimited in the form `.{ext}"
 						}
-						fileType:= CreateOrUpdateFileType(extension, true)
+						fileType:= row[7]
+						fileType:= (fileType) ? updateFileType(extension, fileType) : CreateOrUpdateFileType(extension, true)
 							DeleteUserChoice(extension) ;if you are altering a specific extension, it is assumed that user choice isn't used. set default programs and custom context menu actions.
 							WriteContextMenuEntry("HKCR\" fileType "\shell\", row[1], row[2], row[3], row[4])
 					}
@@ -318,8 +321,14 @@ CreateOrUpdateFileType(ext, force=true) {
 	return fileType
 }
 
+updateFileType(ext, fileType, force=true) {
+	RegWrite("HKCR\" ext,, fileType,, force, true)
+	return fileType
+}
+
 createFileType(fileType) {
 	RegWrite, REG_SZ, % "HKCR\" fileType
+	return fileType
 }
 
 /*
@@ -362,25 +371,30 @@ DeleteUserChoice(extension) {
 
 	Purpose - after user choice is unhooked, filetype most likely wont have any default open action. You can still open the ext using another context menu entry, but double clicking the file in file explorer will either bring up the menu of associated programs, or throw an error (non standard file ext's that havent been opened in any program before)
 
+	@param standardFileType - new file type will be created, unless standardFileType is false. Then the default action will be created there
+
 	Remarks - operation overwrites any existing "open" key
 			- unlinks user choice.
 			- if any fileType is there already and doesnt match {ext}{FILETYPE_SUFFIX}, create a new file type. (while user choice is unlinked, we could be inadvertently changing other file ext's if they share a filetype, which we dont want. If you want multiple ext's to have the same action, it is easy to define in AllFileExt.csv with extension field accepting multiple ext's, delimited by a pipe "|". The downside is that the action is defined on multiple filetype keys, so if you wanted to change it manually in RegEdit you would need to change it in multiple places. The upside is if you only change ext's via default programs csv, then you wont need any manual registry writes and the script will alter the actions in every ext they are defined, even if there are multiple. (And also the other exts associated with the previous filetype wont be changed inadvertently)
 			- if filetype is altered, it doesnt automatically create other keys (defaultIcon, shellNew) so run the other scripts again for changing ico's and new files. Does not delete old filetype (may be useful to keep it for troubleshooting)
 */
-WriteDefaultOpenAction(extension, actionKeyOrCommand) {
+WriteDefaultOpenAction(extension, actionKeyOrCommand, standardFiletype=true) {
 	fileType:= GetFileTypeName(extension)
 	rawExt:= StrReplace(extension, ".", "")
 	expectedFileType:= rawExt FILETYPE_SUFFIX
-	if (!(fileType = expectedFileType)) { ;we dont want to add actions to other file types if the filetype is shared between exts. See remarks for more details
+	if (!(fileType = expectedFileType) && standardFileType) { ;we dont want to add actions to other file types if the filetype is shared between exts. See remarks for more details
 		createFileType(expectedFileType)
 		RegWrite("HKCR\" extension,, expectedFileType,, true)
 	}
 	fileTypePath:= GetFileTypePath(extension)
+	if (!fileTypePath) {
+		throw "WriteDefaultOpenAction - fileType cant be resolved. If file type was passed in csv, verify that it is accurate. Otherwise, default file type should have been created"
+	}
 	command:= getCommandForFileExtension(extension, actionKeyOrCommand)
-	defaultAction:= "open"
+	defaultAction:= "Open"
 	if (command) {
 		RegWrite(fileTypePath "\shell\",,defaultAction,, true, true)
-		RegWrite(fileTypePath "\shell\" defaultAction "\command",,command,, true, true)
+		RegWrite(fileTypePath "\shell\" defaultAction "\command",,command,"REG_EXPAND_SZ", true, true)
 		DeleteUserChoice(extension)
 	}
 }
