@@ -171,7 +171,7 @@ WriteContextMenuEntry(keyPath, keyName, command, icon="", contextMenuName="") {
 	command:= (EXPAND_ENVIRONMENT_VARIABLES) ? expandedCommand : command
 	icon:= (EXPAND_ENVIRONMENT_VARIABLES) ? expandedIcon : icon
 
-	if (!commandHasArguments) {
+	if (!commandHasArguments && (!InStr(command, "cmd.exe") && !InStr(command, "start"))) { ;skip adding default param when starting program from cmd as it causes issues if program isnt expecting any arg (powershell_ise is expecting path of a ps script, not any old file)
 		command.= " ""%1""" ;"%1" passes the name of the file or folder the context menu item was invoked on.
 	}
 	fullKey:= keyPath keyName
@@ -462,6 +462,8 @@ writeNewFileEntry(ext, add=true, description="") {
 	handlerKey:="HKCR\" procId
 	iconKey:= "HKCR\" procId "\DefaultIcon"
 
+	description:= (description) ? description : StringUpper(ext) " File"
+	RegWrite(handlerKey,, description,, false, true)
 
 	previousDefaultDescription:= RegRead(handlerKey)
 	previousDefaultDescriptionBackup:= RegRead(handlerKey, "_Default")

@@ -2,3 +2,4 @@ KeyName,Command,Icon,ContextMenuName
 cmd2,"""%SYSTEMROOT%\system32\cmd.exe"" /s /k pushd ""%V""",%SYSTEMROOT%\System32\cmd.exe,Open with cmd
 zCopy aPath,"CopyFilepath.exe ""%V""",%SYSTEMROOT%\system32\SnippingTool.exe,Copy Path
 zCopy FolderName,"CopyFolderName.exe ""%V""",%SYSTEMROOT%\system32\SnippingTool.exe,Copy Name
+pwshise,"""%SYSTEMROOT%\system32\cmd.exe"" /c start powershell_ise.exe","%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\powershell_ise.exe", Powershell ISE Here
