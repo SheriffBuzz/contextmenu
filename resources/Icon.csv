@@ -1,16 +1,3 @@
 extension,Icon
-.java,
-.p4ignore,
-.class,
-.classpath,
-.reports,
-.jsx,
-.md,
-.bak,
-.sh,
-.checkstyle,
-.gitignore,
-.mf,
-.project,
+.csv,"C:\Program Files\Notepad++\notepad++.exe"
 .sql,
-.csv,
