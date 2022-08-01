@@ -1,0 +1,12 @@
+KeyName,Command,Icon,ContextMenuName
+cmd2,"""%SYSTEMROOT%\system32\cmd.exe"" /s /k pushd ""%V""",%SYSTEMROOT%\System32\cmd.exe,Open with cmd
+pwshise,"""%SYSTEMROOT%\system32\cmd.exe"" /c start powershell_ise.exe","%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\powershell_ise.exe",Powershell ISE Here
+zCopy aPath,"CopyFilepath.exe ""%V""",%SYSTEMROOT%\system32\SnippingTool.exe,Copy Path
+zCopy FolderName,"CopyFolderName.exe ""%V""",%SYSTEMROOT%\system32\SnippingTool.exe,Copy Name
+z5P4V Workspace Tree,"P4RevealInWorkspace.exe ""%V""",p4v.ico,P4V Workspace Tree
+!Toolkit\StartMenu,"ExplorerSelect.exe ""%ProgramData%\Microsoft\Windows\Start Menu\Programs""",toolkit.ico,Start Menu
+!Toolkit\ipconfig,"""%SYSTEMROOT%\System32\cmd.exe"" /s /k ipconfig",%SYSTEMROOT%\System32\cmd.exe,ipconfig
+!Toolkit\EditEnvironmentVariables,"rundll32 sysdm.cpl,EditEnvironmentVariables",SystemProperties.ico,Environment Variables
+!Toolkit\RegEdit,RegEdit,RegEdit.ico,Registry Editor
+!Toolkit\ToolkitOpenContextMenuResources,"ExplorerSelectInWorkspace.exe ""%V"" ""Toolkit"" ""\registry\contextMenu\resources"" ""C:""",toolkit.ico,ContextMenu - Resources
+!Toolkit\IconDll\imageres,"ExplorerSelect.exe ""%SystemRoot%\system32\imageres.dll""",,
