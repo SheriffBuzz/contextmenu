@@ -101,7 +101,7 @@
 |Background\\!Toolkit\IconDll|IconDll                                 |           |
 |.ahk\AhkSubmenu|AhkSubmenu                              |           |
 
-  * KeyShorthand - Sub menus delimited by "\"
+  * KeyShorthand - Sub menus delimited by "\\"
     * Root - Must start with one of the following: [Background, Directory, File, .{extension}, AbsolutePath]
       * Background
       * Directory
