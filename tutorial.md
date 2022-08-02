@@ -17,7 +17,7 @@
 |z1Copy Path             |CopyFilepath.exe "%V"                                            |%SYSTEMDRIVE%\WINDOWS\system32\SnippingTool.exe|Copy Path             |               |                                    |        |
 |z2Copy Name             |CopyFilenameNoExt.exe                                            |%SYSTEMDRIVE%\WINDOWS\system32\SnippingTool.exe|Copy Name             |               |                                    |        |
 
-  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix or postfix the keyName with a special character or Z. Then, set the display name with **ContextMenuName**
+  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix the KeyName with a special character or Z. Then, set the display name with **ContextMenuName**
   * Command [**required**] System command, Exe, or path relative to [**\bin**](/bin)
     * Arguments are supported. Pass them in quotes following the executable path.
     * Quoting the exe is optional if the path does not have spaces, but recommended
@@ -52,7 +52,7 @@
 |zCopy aPath             |CopyFilepath.exe "%V"                                            |%SYSTEMROOT%\system32\SnippingTool.exe         |Copy Path             |
 |zCopy FolderName        |CopyFolderName.exe ""%V"""                                       |%SYSTEMROOT%\system32\SnippingTool.exe         |Copy Name             |
 
-  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix or postfix the keyName with a special character or Z. Then, set the display name with **ContextMenuName**
+  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix the KeyName with a special character or Z. Then, set the display name with **ContextMenuName**
   * Command [**required**] System command, Exe, or path relative to [**\bin**](/bin)
     * Arguments are supported. Pass them in quotes following the executable path.
     * Quoting the exe is optional if the path does not have spaces, but recommended
@@ -80,7 +80,7 @@
 |!Toolkit\ToolkitOpenContextMenuResources|ExplorerSelectInWorkspace.exe "%V" "Toolkit" "\registry\contextMenu\resources" "C:"|toolkit.ico                                    |ContextMenu - Resources|
 |!Toolkit\IconDll\imageres|ExplorerSelect.exe "%SystemRoot%\system32\imageres.dll"          |                                               |                      |
 
-  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix or postfix the keyName with a special character or Z. Then, set the display name with **ContextMenuName**
+  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix the KeyName with a special character or Z. Then, set the display name with **ContextMenuName**
   * Command [**required**] System command, Exe, or path relative to [**\bin**](/bin)
     * Arguments are supported. Pass them in quotes following the executable path.
     * Quoting the exe is optional if the path does not have spaces, but recommended
