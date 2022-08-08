@@ -1,15 +1,16 @@
-﻿#SingleInstance, Force
+﻿#NoEnv
+#SingleInstance, Force
 
 global WORKING_DIRECTORY:= GetWorkingDirectory()
 #Include %A_LineFile%\..\src\base\Constants.ahk
-
 #Include %A_LineFile%\..\src\Util.ahk
-#Include %A_LineFile%\..\src\base\ContextMenuResourceManager.ahk
-#Include %A_LineFile%\..\src\base\ContextMenuWriteAction.ahk
-#Include %A_LineFile%\..\src\FolderContents.ahk
+#Include %A_LineFile%\..\src\base\ContextMenuWriteSession.ahk
+#Include %A_LineFile%\..\src\base\ResourceRequest.ahk
+#Include %A_LineFile%\..\src\json\JXON.ahk
 
 /*
 	WriteContextMenu
+
 
 	IMPORTANT! This script must be run as administrator to reflect registry changes
 	This file automates writes the registry to set context menu items. This script contains a directory structure as follows
@@ -38,136 +39,50 @@ global WORKING_DIRECTORY:= GetWorkingDirectory()
 */
 GetWorkingDirectory() {
 	SplitPath, A_LineFile,, dir
+	if (A_IsCompiled) { ;HACK ;assuming if our program is compiled is in \bin
+		SplitPath, dir,, dir
+	}
+	SetWorkingDir, %dir% ;needed by WriteFileOrFolder. Edge case where script "command" key has the same name as the local filepath in \bin (HotswapContextMenu.exe)
 	return dir
 }
+;Arguments are required for this script. By checking if args are present, we can call the main method or not. This gives the option to call either via cmd args, or #Include and call the function directly
+if (A_Args.count() > 0) { 
+	WriteContextMenu()
+}
 
-WriteContextMenu()
-WriteContextMenu() {
-	writeType:= (A_Args[1]) ? A_Args[1] : WRITE_TYPE_ALL
+WriteContextMenu() {	
+	writeType:= A_Args[1]
+	resourcesPathPatterns:= []
+	i:= 2
+	while (i <= A_Args.MaxIndex()) {
+		resourcesPathPatterns.push(A_Args[i])
+		i:= i + 1
+	}
+	resourceRequest:= {}
+	resourceRequest.includes:= resourcesPathPatterns
+	WriteContextMenuMain(writeType, resourceRequest)
+}
+WriteContextMenuMain(writeType, resourceRequest) {
+	global defaultCfg ;scripts that #Include this one can set cfg directly
+	writeType:= (writeType) ? writeType : WRITE_TYPE_ALL
+	;Debug
+	;writeType:= "Delete"
+	;writeType:= "SubMenu|Directory|Background"
+	;writeType:= "SubMenu"
+	;resourcesPathPatterns.push("/")
+	;resourcesPathPatterns.push("one")
+	;Debug
+	if (!IsObject(defaultCfg)) {
+		;defaultCfg that might be set in external cfg goes here.
+		defaultCfg:= {}
+	}
+	logger.setLogLevel(defaultCfg.logLevel)
 
-	defaultCfg:= {}
-	defaultCfg.suppressErrorMessages:= false
-	ContextMenuWriteSession:= new ContextMenuWriteSessionClass(WORKING_DIRECTORY, defaultCfg)
+	;defaultCfg that isnt in external cfg goes here
+	defaultCfg.resourceRequest:= new ResourceRequestClass(resourceRequest)
+	defaultCfg.workingDirectory:= WORKING_DIRECTORY
+	ContextMenuWriteSession:= new ContextMenuWriteSessionClass(defaultCfg)
 
 	ContextMenuWriteSession.write(writeType)
 }
 
-/*
-	ContextMenuWriteSession
-
-	Contains all state needed to write context menus to the registry
-*/
-class ContextMenuWriteSessionClass {
-	__New(workingDirectory, defaultCfg="") {
-		if (!workingDirectory) {
-			throw "ContextMenuWriteSession - constructor arg workingDirectory is null"
-		}
-		this.workingDirectory:= workingDirectory
-		this.resourcesContents:= new FolderContentsClass(this.workingDirectory "\resources", true, true)
-		this.resourceManager:= new ContextMenuResourceManagerClass(this.resourcesContents)
-		
-		this.actions:= new ContextMenuActionsClass()
-		this.init() ;cant use foreach inside constructor against a prop
-
-		if (IsObject(defaultCfg)) {
-			this.suppressErrorMessages:= defaultCfg.suppressErrorMessages
-			this.workflowService:= new ContextMenuWriteWorkflowClass(this)
-		}
-
-		this.registryPermissionError:= false ;if we get registry permission error, all write actions will probably fail. Skip additional actions and only display one error.
-	}
-	init() {
-		for i, action in this.actions {
-			action.setWorkingDirectory(this.workingDirectory)
-		}
-		this.workflowService.setSessionContext(this)
-	}
-
-	write(writeType) {
-		errors:= []
-		actionResults:= []
-
-		filteredActions:= this.actions.getFilteredAndSortedActions(writeType)
-
-		for i, action in filteredActions {
-			actionCsvCfgPaths:= action.getEligibleResources(this.resourceManager)
-
-			;read csv 1 or more csv files per action and merge the rows
-			for j, actionCsvCfgPath in actionCsvCfgPaths {
-				FileRead, csv, %actionCsvCfgPath%
-				headerAndData:= csvToHeaderAndData(csv, true)
-				csvData:= headerAndData.data
-				csvHeader:= headerAndData.header
-				error:= action.processCsvHeader(csvHeader)
-				if (error) {
-					error.where:= actionCsvCfgPath
-					errors.push(error)
-					continue
-				}
-				for k, row in csvData {
-					error:= action.addCsvConfigRow(row, actionCsvCfgPath, k)
-					if (IsObject(error)) {
-						error.where:= actionCsvCfgPath
-						error.rowNum:= k
-						errors.push(error)
-						continue
-					}
-				}
-			}
-		}
-		
-		this.displayErrors(errors)
-
-		for i, action in filteredActions {
-			this.workflowService.executeWorkflow(action)
-			if (action.result) {
-				actionResults.push(action.result)
-			}
-		}
-		this.displayErrors(this.workflowService.errors)
-		this.displayErrors(actionResults)
-	}
-
-	displayErrors(errors) {
-		;hack to make msgbox wider, useful for displaying long file paths
-		title:= "-----------------------------------------------------------------------------------------------------------------------------"
-		for i, error in errors {
-			if (this.suppressErrorMessages) {
-				break
-			}
-			if (error.getMessage) {
-				ref:= ObjBindMethod(error, "getMessage")
-				msg:= ref.call()
-				Msgbox,, %title%, % error.class "`n`n" ((msg) ? msg : error.getMessage)
-			} else {
-				Msgbox,, %title%, % error
-			}
-		}
-	}
-}
-class ContextMenuActionsClass {
-	__New() {
-		this.actions:= [] ;array order determines which will run first for writeType All
-		this.actions.push(new ContextMenuWriteActionClass("SubMenu", "SubMenu"))
-		this.actions.push(new ContextMenuWriteActionClass("File", "File"))
-		this.actions.push(new ContextMenuWriteActionClass("Directory", "Directory"))
-		this.actions.push(new ContextMenuWriteActionClass("Background", "Background"))
-		this.actions.push(new ContextMenuWriteActionClass("DefaultProgram", "DefaultProgram"))
-		this.actions.push(new ContextMenuWriteActionClass("Icon", "Icon"))
-		this.actions.push(new ContextMenuWriteActionClass("NewFile", "NewFile"))
-	}
-
-	getFilteredAndSortedActions(writeType) {
-		filtered:= []
-		if (writeType = WRITE_TYPE_ALL) {
-			filtered:= this.actions
-		} else {
-			for i, action in this.actions {
-				if (action.writeType = writeType) {
-					filtered.push(action)
-				}
-			}
-		}
-		return filtered
-	}
-}

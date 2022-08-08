@@ -1,4 +1,4 @@
-KeyName,Command,Icon,ContextMenuName,Extension,UserChoice,filetype
+KeyName,Command,IconLocation,DisplayName,Extension,UserChoice,filetype
 GIMP,"""C:\Program Files\GIMP 2\bin\gimp-2.10.exe"" ""%1""",,,,AppX43hnxtbyyps62jhe9sqpdzxn1790zetc,
 GIMP,"""C:\Program Files\GIMP 2\bin\gimp-2.10.exe"" ""%1""",,,.ico,,
 Paint,"""C:\WINDOWS\system32\mspaint.exe"" ""%1""",,,,AppX43hnxtbyyps62jhe9sqpdzxn1790zetc,

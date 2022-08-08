@@ -1,4 +1,6 @@
 ﻿#Include %A_LineFile%\..\FolderContents.ahk
+#Include %A_LineFile%\..\logging\Logger.ahk
+global logger:= new LoggerClass("C:\toolkit\registry\contextmenu") ;@Export Logger
 
 ;Taken from GridFactory.csvHeaderAndData in Grid.ahk
 csvToHeaderAndData(ByRef csv, ByRef hasHeader, ByRef separator="`,") {
@@ -143,6 +145,20 @@ StrExtractBetween(ByRef text, prefix, suffix, includeEnds=false, greedy=false) {
 	}
 }
 
+/*
+	StrIsQuoted
+	@param str
+	@param strict - should quotes be disallowed in the middle of the string
+*/
+StrIsQuoted(str, strict=false) {
+	if (strict) {
+		if (StrCountOccurences(str, """") != 2) {
+			return false
+		}
+	}
+	return (SubStr(str, 1, 1) = """") && (SubStr(str, 0, 1) = """")
+}
+
 ReadIniCfg(path, section, key) {
     IniRead, OutputVar, %path%, %section%, %key%
     return OutputVar
@@ -153,9 +169,24 @@ ReadIniCfg(path, section, key) {
 	https://www.autohotkey.com/board/topic/9516-function-expand-paths-with-environement-variables/
 */
 ExpandEnvironmentVariables(ByRef path) {
+	if (!path) {
+		return
+	}
 	VarSetCapacity(dest, 2000) 
 	DllCall("ExpandEnvironmentStrings", "str", path, "str", dest, int, 1999, "Cdecl int") 
 	return dest
+}
+
+/*
+	isEnvironmentVariable
+	Check if string starts and ends in percent. no other validations are done.
+*/
+isEnvironmentVariable(str) {
+	return (SubStr(str, 1, 1) = "%") && (SubStr(str, 0, 1) = "%")
+}
+
+lastChar(str) {
+	return SubStr(str, 0, 1)
 }
 
 /*
@@ -369,7 +400,7 @@ getCommandForFileExtension(extension, actionKeyOrCommand) {
 	return command
 }
 
-createOrUpdateNestedMenu(containingShellPath, keyName, iconPath="", displayName="") {
+createOrUpdateNestedMenu(containingShellPath, keyName, iconLocation="", displayName="") {
 	keyPath:= containingShellPath "\" keyName
 	menuExists:= RegRead(keyPath, "MUIVerb")
 
@@ -381,21 +412,33 @@ createOrUpdateNestedMenu(containingShellPath, keyName, iconPath="", displayName=
 		RegWrite(keyPath, "MUIVerb" displayName)
 		RegWrite(keyPath, "SubCommands", "")
 	}
-	if (icon) {
-		RegWrite(keyPath, "Icon", iconPath)
+	if (iconLocation) {
+		RegWrite(keyPath, "Icon", iconLocation)
 	}
 }
 
 /*
 	locateIconPath
 
+	prefer ContextMenuResourceManager.locateIconPath. This version will be used by default if session context isnt avaiable
+
+
 	Locate icon path based on absolute path (env variables are ok) or relative in \resources\ico\ext.
 
 	@param pathPattern - file path, .ext in \resources\ico\ext, or filename (must include ext) in \resources\ico.
+	@param isExpand - if blank, use EXPAND_ENVIRONMENT_VARIABLES
 
 	@return unexpanded path
 */
-locateIconPath(pathPattern) {
+locateIconPath(pathPattern, isExpand="$NULL$") {
+	if (pathPattern = "") {
+		return ""
+	}
+
+	pathPattern:= StrReplace(pathPattern, "/", "\") ;user may give forward or backslash in csv
+	if (isExpand = "$NULL$") {
+		isExpand:= EXPAND_ENVIRONMENT_VARIABLES
+	}
 	expandedPathPattern:= ExpandEnvironmentVariables(pathPattern)
 	if (!FileExist(expandedPathPattern)) {
 		split:= StrSplit(pathPattern, ".")
@@ -406,10 +449,11 @@ locateIconPath(pathPattern) {
 		}
 		expandedPathPattern:= ExpandEnvironmentVariables(pathPattern)
 		if (!FileExist(expandedPathPattern)) {
+			logger.DEBUG(A_ThisFunc " ~ Path not found ~ " pathPattern)
 			return
 		}
 	}
-	return (EXPAND_ENVIRONMENT_VARIABLES) ? expandedPathPattern : pathPattern
+	return (isExpand) ? expandedPathPattern : pathPattern
 }
 
 /*
@@ -451,4 +495,309 @@ StrTrimSuffix(str, suffix) {
 		return SubStr(str, 1, startIdx - 1)
 	}
 	return str
+}
+
+/*
+	StrAppendIfMissing
+
+	Appends a char sequence to the end of an array, if is does not end in that.
+	Handles suffix of any length.
+*/
+StrAppendIfMissing(str, suffix) {
+	suffixLength:= StrLen(suffix)
+	strLength:= StrLen(str)
+	startIdx:= strLength - suffixLength + 1
+	return (SubStr(str, startIdx) = suffix) ? str : str suffix
+}
+
+/*
+	ArrayContains
+
+	@return foundIdx
+*/
+ArrayContains(ByRef arr, str) {
+	for i, val in arr {
+		if (val = str) {
+			return i
+		}
+	}
+}
+
+/*
+	Array Filter
+
+	Returns a new array containing elements where filterVals contains arr[i]
+
+	Equivalent to source.stream().filter(val -> filterVals.contains(val)).collect(Collectors.toList()) in java
+
+	Remarks - only works for array types
+*/
+ArrayFilter(ByRef arr, ByRef filterVals) {
+	filtered:= []
+	for i, val in arr {
+		if (ArrayContains(filterVals, val)) {
+			filtered.push(val)
+		}
+	}
+	return filtered
+}
+
+ArrayAddAll(ByRef arr1, ByRef arr2) {
+	for i, val in arr2 {
+		arr1.push(val)
+	}
+}
+
+/*
+	ForEach - runs consumer function on object or array
+
+	@param iterableSource - If iterableSource is Ahk "Object", then FuncRef is BiConsumer<K,V>. If "Array", then Consumer<V>.
+	@param thiz. - object the scope inside the function will be bound to.
+		- Special handling - user can pass string "this" to refer to the current object
+
+	Remarks - object is only guarenteed to be non-array its keys are non integer (string "1" is a string)
+*/
+ForEach(ByRef iterableSource, functionName, ByRef thiz="", params*) {
+	funcRef:= (IsObject(thiz)) ? ObjBindMethod(thiz, functionName) : Func(functionName)
+
+	if (iterableSource.MaxIndex() > 0) {
+		for i, val in iterableSource {
+			if (thiz = "this") {
+				funcRef:= ObjBindMethod(val, functionName)
+			}
+			funcRef.call(val, params*)
+		}
+	} else {
+		for key, val in iterableSource {
+			funcRef.call(key, val, params*)
+		}
+	}
+}
+
+/*
+	ArrayMapByPropertyName
+	
+	Map a collection into a collection of some property. Since we cant pass anonymous functions, it is restricted to property name instead of a mapper function.
+	Similar java syntax: collection.stream().map(order -> order::getOrderId).collect(Collectors.toList())
+*/
+ArrayMapByPropertyName(ByRef arr, prop) {
+	container:= []
+	for i, obj in arr {
+		container.push(obj[prop])
+	}
+	return container
+}
+
+/*
+    run program with arguments.
+    @param args* Variable number of arguments. If you pass an Array, each element will be expanded (only 1d array supported)
+    All paths and arguments will be quoted in the final command.
+*/
+runProgramWithArguments(path, args*) {
+    args:= ""
+    if (!path) {
+        return
+    }
+    for i, arg in args {
+        if (IsObject(arg)) {
+            for j, arrElement in arg {
+                args.= """" arrElement """ "
+            }
+        } else {
+            args.= """" arg """ "
+        }
+    }
+    command:= """" path """ " args
+    Run, %command%
+}
+
+/*
+	AssertObjHasProperties
+
+	Assert that input object has the following properties.
+	@param obj
+	@param props - array of props to match
+	@param emptyValuesAllowed - if false, asserts that each key is present and each val != ""
+	@throws error if object does not have any properties
+*/
+AssertObjHasProperties(obj, props, emptyValuesAllowed=true) {
+	keys:= []
+	for key, val in obj {
+		keys.push(key)
+		if (!emptyValuesAllowed) {
+			if (val = "") {
+				throw "AssertObjectHasProperties  - " key " is blank"
+			}
+		}
+	}
+	for i, prop in props {
+		if (!ArrayContains(keys, prop)) {
+			throw "AssertObjectHasProperties - prop " prop " not found on object"
+		}
+	}
+	return true
+}
+
+/*
+	CopyPropertiesStrict
+
+	Copies properties from a source to target object, iff props is blank or source has all, non null properties.
+*/
+CopyPropertiesStrict(ByRef source, ByRef target, props="") {
+	filterProps:= IsObject(props)
+	if (filterProps) {
+		AssertObjHasProperties(source, props, false)
+	}
+	target:= (IsObject(target)) ? target : {}
+	for key, val in source {
+		if (filterProps) {
+			if (!ArrayContains(props, key)) {
+				continue
+			}
+		}
+		target[key]:= val
+	}
+}
+
+/*
+	Count 
+*/
+StrCountOccurences(str, charSequence) {
+	StrReplace(str, charSequence,,count)
+	return count
+}
+
+/*
+	Set - Implementation of set data structure
+
+	Remarks
+		- only non-object values are supported, due to lack of hash function/equals
+		- Naming convention - ISet - if you name a ref the same name as the class, reassigning the ref overrides the class definition ()
+			- AHK isnt case sensitive for function names so cant name classes upper and object lower
+			- https://www.autohotkey.com/boards/viewtopic.php?t=37011
+*/
+class ISet {
+	__New(ByRef items) {
+		this.uniqueMap:=[]
+	}
+	
+	contains(key) {
+		return this.uniqueMap[key] = true
+	}
+
+	add(key, allowNull=false) {
+		if (!allowNull && key == "") {
+			return
+		}
+		this.uniqueMap[key]:= true
+	}
+
+	addAll(keys, allowNull=false) {
+		for i, key in keys {
+			this.add(key, allowNull)
+		}
+	}
+
+	/*
+		remarks - while set guarentees no ordering of keys, they will be implicitly ordered by AHK natural ordering
+	*/
+	toArray() {
+		arr:= []
+		for val, flag in this.uniqueMap {
+			arr.push(val)
+		}
+		return arr
+	}
+}
+
+apply(ByRef to, from, force=false) {
+	if (!IsObject(from)) {
+		return
+	}
+	for key, val in from {
+		sourceVal:= to[key]
+		if (sourceVal = "" || force) {
+			to[key]:= val
+		}
+	}
+	return to
+}
+
+
+/*
+	getPaddedGridByLargestColumn
+
+	Slightly modified version of Grid.getPaddedGridByLargestColumn to work without header
+*/
+getPaddedGridByLargestColumn(arr2d, char=" ", leadingPad=true) {
+	columnIdxToCellLengthMap:= []
+
+	for j, columnName in arr2d[1] {
+		cellLength:= columnIdxToCellLengthMap[j]
+		if (cellLength < 1 || cellLength = "") {
+			cellLength:= 0
+		}
+		for i, row in arr2d {
+			cell:= row[j]
+			if (StrLen(cell) > cellLength) {
+				cellLength:= StrLen(cell)
+			}
+		}
+		columnIdxToCellLengthMap[j]:= cellLength
+	}
+	
+	updatedData:=[]
+	updatedHeader:= []
+	for i, row in arr2d {
+		updatedData[i]:=[]
+		curColumn:= 1
+		for j, cell in row {
+			columnLength:= columnIdxToCellLengthMap[j]
+			len:= StrLen(cell)
+			diff:= columnLength - len
+			updatedCell:= (diff) ? ((leadingPad) ? StrGetPad(char, diff) cell : cell StrGetPad(char, diff)) : cell
+			updatedData[i][curColumn]:= updatedCell
+			curColumn:= curColumn + 1
+		}
+	}
+	return updatedData
+}
+
+;debug
+;arr:= [["abc", "1233333333"],[2222222, "sssssssssssssSsssss"]]
+;arr:= getPaddedGridByLargestColumn(arr,,false)
+;Clipboard:= arr2dToString(arr, " ~ ", "`n", "`t`t")
+;debug
+
+arr2dToString(arr2d, columnCombiner, rowCombiner, rowPrefix) {
+	rows:= []
+	for i, row in arr2d {
+		rowStr:= CombineArray(row, columnCombiner)
+		rowStr:= (rowPrefix) ? rowPrefix RowStr : rowStr
+		rows.push(rowStr)
+	}
+	return (CombineArray(rows, rowCombiner))
+}
+
+;StringUtils
+global StrPadCache:=[]
+StrGetPad(ByRef padChar, ByRef padLength) {
+	cacheByChar:= StrPadCache[padChar]
+	if (!cacheByChar) {
+		cacheByChar:= []
+	}
+	if (cacheByChar[padLength]) {
+		return cacheByChar[padLength]
+	} else {
+		lastIdx:= cacheByChar.MaxIndex()
+		if (!lastIdx) {
+			lastIdx:= 0
+		}
+		while (lastIdx <= padLength) {
+			current:= cacheByChar[lastIdx] . padChar
+			lastIdx:= lastIdx + 1
+			cacheByChar[lastIdx]:= current
+		}
+		return cacheByChar[padLength]
+	}
 }

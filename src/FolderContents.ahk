@@ -1,3 +1,5 @@
+#Include %A_LineFile%\..\Util.ahk
+
 /*
 	FolderContents
 
@@ -28,11 +30,11 @@ class FolderContentsClass {
 		fileNames:=[]
 		folderContents:= new FolderContentsClass()
 
-		folderPath:= ExpandEnvironmentVariables(folderPath)
+		this.folderPath:= ExpandEnvironmentVariables(folderPath)
 		if (!FileExist(folderPath)) {
 			return {}
 		}
-		filePattern:= folderPath "\*" extension
+		filePattern:= this.folderPath "\*" extension
 		mode:= "" ;Ahk remarks F = Include files. If both F and D are omitted, files are included but not folders.
 		if (recurse) {
 			mode.= "R"
@@ -57,6 +59,8 @@ class FolderContentsClass {
 			fi.fileNameNoExt:= fileNameNoExt
 			fi.ext:= ext
 			fi.rawExt:= rawExt
+			fi.module:= SubStr(dir, StrLen(folderPath) + 2) ;1 for next idx after folderPath, 1 to strip off trailing slash from Loop, files
+			fi.module:= (fi.module) ? fi.module : "\"
 			this.fileInfos.push(fi)
 
 			this.fileNames.push(fileName)
@@ -98,5 +102,23 @@ class FolderContentsClass {
 			}
 		}
 		return paths
+	}
+
+	/*
+		GetFileInfos
+		@param FileInfoPredicateRef - (fileInfo) -> boolean
+	*/
+	GetFileInfos(FileInfoPredicateRef) {
+		filtered:= []
+		for i, fileInfo in this.fileInfos {
+			if (FileInfoPredicateRef) {
+				if (%FileInfoPredicateRef%(fileInfo) = true) {
+					filtered.push(fileInfo)
+				}
+			} else {
+				filtered.push(fileInfo)
+			}
+		}
+		return filtered
 	}
 }

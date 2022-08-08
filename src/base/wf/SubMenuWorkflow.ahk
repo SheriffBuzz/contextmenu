@@ -12,14 +12,16 @@
 class SubMenuWorkflow {
     defaultParams:=
     
-    __New() {
+    __New(ByRef sessionContext) {
+        this.sessionContext:= sessionContext
         this.defaultParams:= {}
     }
 
     execute(ByRef actionContext, ByRef model) {
+        shouldCreateMenu:= true
         keyShorthand:= model.keyShortHand
         displayName:= model.displayName
-        icon:= model.icon
+        iconLocation:= model.iconLocation
 
         segments:= StrSplit(keyShorthand, "\")
         SubMenuUtil.resolveAliases(segments)
@@ -37,23 +39,29 @@ class SubMenuWorkflow {
         }
         if (unprocessedDepth > 1) {
             model.error:= "Cannot process submenu. Processing is not done recursively, so for multiple sub menus, define the top level ones first."
+            shouldCreateMenu:= false
             return
         }
         if (unprocessedDepth < 1) {
-            return
+            shouldCreateMenu:= false
         }
-        this.createSubMenu(fullPath, (displayName) ? displayName : segments[segments.maxIndex()], icon)
+        if (shouldCreateMenu) {
+            this.createSubMenu(fullPath, (displayName) ? displayName : segments[segments.maxIndex()], iconLocation)
+        }
+        this.updateIcon(model, fullPath, iconLocation)
     }
 
-    createSubMenu(keyPath, displayName, icon) {
-        iconResourcePath:= locateIconPath(icon)
-
+    createSubMenu(keyPath, displayName, iconLocation) {
         RegWrite(keyPath,,,,true, true)
         RegWrite(keyPath "\Shell",,,,true, true)
         RegWrite(keyPath, "MUIVerb", displayName,,true, true)
         RegWrite(keyPath, "Subcommands", "",,true, true)
-        if (iconResourcePath) {
-            RegWrite(keyPath, "Icon", """" iconResourcePath """", "REG_EXPAND_SZ", true, true)
+    }
+
+    updateIcon(ByRef model, keyPath, iconLocation) {
+        iconLocationPath:= this.sessionContext.getResourceManager().locateIconPath(iconLocation, model.getMetadataValue("module"))
+        if (iconLocationPath) {
+            RegWrite(keyPath, "Icon", """" iconLocationPath """", "REG_EXPAND_SZ", true, true)
         }
     }
 

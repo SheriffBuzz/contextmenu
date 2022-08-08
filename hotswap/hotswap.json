@@ -1,0 +1,51 @@
+{
+	"defaultCfg" : {
+		"suppressErrorMessages": true,
+		"logLevel": "Debug",
+		"forceDeleteSubMenus": false
+	},
+	"configurations": {
+		"LoadAll": {
+			"WriteType": "All",
+			"resourcePatterns": {
+				"includePaths": ["Toolkit", "/"],
+				"excludePaths": []
+			}
+		},
+		"LoadAdmin": {
+			"WriteType": "All",
+			"resourcePatterns": {
+				"includePaths": ["Toolkit/hotswap"],
+				"excludePaths": []
+			}
+		},
+		"LoadRoot": {
+			"WriteType": "All",
+			"resourcePatterns": {
+				"includePaths": ["/"],
+				"excludePaths": []
+			}
+		},
+		"DeleteRoot": {
+			"WriteType": "Delete",
+			"resourcePatterns": {
+				"includePaths": ["/"],
+				"excludePaths": []
+			}
+		},
+		"DeleteAll": {
+			"WriteType": "Delete",
+			"resourcePatterns": {
+				"includePaths": [],
+				"excludePaths": ["Toolkit/hotswap"]
+			}
+		},
+		"LoadIcon": {
+			"WriteType": "Icon",
+			"resourcePatterns": {
+				"includePaths": ["/"],
+				"excludePaths": []
+			}
+		}
+	}
+}

@@ -1,0 +1,7 @@
+KeyName,Command,IconLocation,DisplayName
+!Toolkit\!Hotswap\!1LoadAll,"HotswapContextMenu.exe ""C:\toolkit\registry\contextmenu\hotswap\hotswap.json"" ""LoadAll""",,Load All
+!Toolkit\!Hotswap\!1DeleteAll,"HotswapContextMenu.exe ""C:\toolkit\registry\contextmenu\hotswap\hotswap.json"" ""DeleteAll""",,Delete All
+!Toolkit\!Hotswap\!2LoadAdmin,"HotswapContextMenu.exe ""C:\toolkit\registry\contextmenu\hotswap\hotswap.json"" ""LoadAdmin""",,Load Admin
+!Toolkit\!Hotswap\!3LoadRoot,"HotswapContextMenu.exe ""C:\toolkit\registry\contextmenu\hotswap\hotswap.json"" ""LoadRoot""",,Load Root
+!Toolkit\!Hotswap\!4DeleteRoot,"HotswapContextMenu.exe ""C:\toolkit\registry\contextmenu\hotswap\hotswap.json"" ""DeleteRoot""",,Delete Root
+!Toolkit\!Hotswap\!5LoadIcon,"HotswapContextMenu.exe ""C:\toolkit\registry\contextmenu\hotswap\hotswap.json"" ""LoadIcon""",,Load Icon Root

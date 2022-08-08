@@ -1,5 +1,5 @@
 Extension,ActionKeyOrCommand,IsCreateNewFileType
-.csv|.sqldefs|.sql|.java,!Notepad++,
+.csv|.sql|.java|.json|.log,!Notepad++,
 .md,VSCode,
 .xls|.xlsx,Excel,
 .ps1,"""%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\powershell.exe"" ""-Command"" ""if((Get-ExecutionPolicy ) -ne 'AllSigned') { Set-ExecutionPolicy -Scope Process Bypass }; & '%1'""",1

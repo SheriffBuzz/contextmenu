@@ -14,5 +14,5 @@ global REGISTRY_KEY_DIRECTORY_BACKGROUND:="HKCR\Directory\Background\shell"
 
 global FILETYPE_SUFFIX:= "file" ;suffix for file extension. ie. if ext is ".csv", fileType is "csvfile". Used when creating new extensions, or unlinking file ext's from default programs to a new default program
 
-global EXPAND_ENVIRONMENT_VARIABLES:= ReadIniCfg(WORKING_DIRECTORY "\settings.ini", "settings", "ExpandEnvironmentVariables")
+global EXPAND_ENVIRONMENT_VARIABLES:= (ReadIniCfg(WORKING_DIRECTORY "\settings.ini", "settings", "ExpandEnvironmentVariables")) ? true : false
 global WRITE_TYPE_ALL:= "All"

@@ -1,3 +1,18 @@
-extension,Icon
-.csv,"C:\Program Files\Notepad++\notepad++.exe"
+extension,IconLocation
+.java,
+.p4ignore,
+.class,
+.classpath,
+.jsx,
+.md,
+.bak,
+.sh,
+.checkstyle,
+.gitignore,
+.mf,
+.project,
 .sql,
+.csv,
+.json,
+.xml,
+.log,

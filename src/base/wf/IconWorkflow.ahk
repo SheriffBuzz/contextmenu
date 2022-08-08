@@ -13,7 +13,8 @@
 class IconWorkflow {
     defaultParams:=
     
-    __New() {
+    __New(ByRef sessionContext) {
+        this.sessionContext:= sessionContext
         this.defaultParams:= {add: true, deleteShellExtensions: true}
     }
 
@@ -21,7 +22,7 @@ class IconWorkflow {
         extension:= model.extension
         add:= model.add
         deleteShellExtensions:= model.deleteShellExtensions
-        icon:= model.icon
+        iconLocation:= model.iconLocation
 
         rawExtension:= RawFileExtension(extension)
         extensionKey:= GetExtensionKey(extension)
@@ -40,33 +41,49 @@ class IconWorkflow {
 
         iconKey:= "HKCR\" fileType "\DefaultIcon"
 
-        if (add) {		
-            ;icon
-            iconResourcePath:= (icon) ? locateIconPath(icon) : locateIconPath(extension)
-            if (iconResourcePath) {                
+        if (add) {
+            iconLocationPattern:= (iconLocation) ? iconLocation : extension	
+            iconLocation:= this.sessionContext.getResourceManager().locateIconPath(iconLocationPattern, model.getMetadataValue("module"))
+            iconLocation:= """" iconLocation """"
+            if (iconLocation) {                
                 previousIcon:= RegRead(iconKey)
+
+                ;model hasnt been updated
+                if (previousIcon && (previousIcon = iconLocation)) {
+                    return
+                }
+
                 previousIconBackup:= RegRead(iconKey, "_Default")
                 
-                RegWrite, REG_EXPAND_SZ, %iconKey%,, %iconResourcePath%
+                RegWrite, REG_EXPAND_SZ, %iconKey%,, %iconLocation%
                 if (!previousIconBackup) {
                     RegWrite, REG_SZ, %iconKey%, _Default, %previousIcon%
                 }
             } else {
-                TrayTip, WriteNewFileEntry, % "Icon not set, checked " iconResourcePath
+                TrayTip, WriteNewFileEntry, % "Icon not set, checked " iconLocation
             }
 
             shellExtensionsValue:= RegRead(fileTypePath, "ShellExtensions")
             if (shellExtensionsValue && deleteShellExtensions) {
                 RegDelete, % fileTypePath "\ShellExtensions",
             }
+            shellExIconHandlerValue:= RegRead(fileTypePath "\ShellEx\IconHandler")
+            if (shellExIconHandlerValue) {
+                RegDelete, % fileTypePath "\ShellEx\IconHandler"
+            }
         } else {
             ;Not supported, use FileTypeMan
         }
+        model.setMetadataFlag("shouldRunSHChangeNotify")
     }
 
     onExecute(ByRef actionContext, ByRef successModels) {
-        if (successModels.count() > 0) {
+        updatedCount:= new ModelList(successModels).getMetadataByProperty("shouldRunSHChangeNotify").count()
+        if (updatedCount > 0) {
+            logger.INFO("Calling SHChangeNotify.exe")
             Run, % WORKING_DIRECTORY "\bin\ShChangeNotify.exe"
         }
+        actionContext.result:= updatedCount ((updatedCount = 1) ? " Icon" : " Icons") " written"
+        logger.INFO(actionContext.result)
     }
 }

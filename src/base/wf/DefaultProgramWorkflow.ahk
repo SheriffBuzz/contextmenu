@@ -47,9 +47,11 @@ class DefaultProgramWorkflow {
         command:= getCommandForFileExtension(extension, actionKeyOrCommand)
         defaultAction:= "Open"
         if (command) {
-            RegWrite(fileTypePath "\shell\",,defaultAction,, true, true)
+            RegWrite(fileTypePath "\shell",,defaultAction,, true, true)
             RegWrite(fileTypePath "\shell\" defaultAction "\command",,command,"REG_EXPAND_SZ", true, true)
             DeleteUserChoice(extension)
+        } else {
+            model.error:= "Command not able to be resolved via lookup`n" fileTypePath "\shell\" actionKeyOrCommand "\command`n" "HKCR\*\shell\" actionKeyOrCommand "\command`n"
         }
     }
 }

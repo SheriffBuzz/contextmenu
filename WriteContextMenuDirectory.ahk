@@ -1,1 +1,0 @@
-﻿Run, WriteContextMenu.ahk Directory

@@ -1,3 +1,0 @@
-﻿;Writes default programs. Used for when a filetype doesnt have any default open action outside its userchoice. We want to unlink user choice to define custom menu entries only for specific file types. Also unlinks user choice and shared file types, creatinga new filetype if necessary, that will only be used by one extension.
-;Microsoft apps (photos, paint, etc) arent supported directly. Use DefaultPrograms.reg and add the exported keys from the user choice app handler (ie export HKEY_CLASSES_ROOT\AppX43hnxtbyyps62jhe9sqpdzxn1790zetc\Shell\open and change it to HKEY_CLASSES_ROOT\pngfile\Shell\open
-Run, WriteContextMenu.ahk DefaultProgram

@@ -52,7 +52,7 @@ class NewFileWorkflow {
             if (!menuDescription) {
                 ;TODO allow user to pass format options
                 extensionLength:= StrLen(rawExtension)
-                menuDescription:= (extensionLength <= 3) ? StringUpper(rawExtension) " File" : StringUpper(rawExtension, true) " File"
+                menuDescription:= (extensionLength <= 3) ? (StringUpper(rawExtension) " File") : (StringUpper(rawExtension, true) " File")
             }
             RegWrite(fileTypePath,, menuDescription,, true, true)
         }

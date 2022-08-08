@@ -76,5 +76,43 @@ class SubMenuUtilClass {
             keyName:= leafKeyName
         }
     }
+
+    processNestedMenuForModel(ByRef actionContext, ByRef model) {
+        keyName:= model.keyName
+        keyPath:= model.keyPath
+
+        if (!keyName || !keyPath) {
+            throw "SubMenuUtil - Unable to process nested menu - key name or path not set on model."
+        }
+
+        if (InStr(keyName, "\")) {
+            rootShorthand:= this.getRootAlias(actionContext, model)
+            this.processNestedMenu(rootShorthand, keyPath, keyName)
+        }
+        model.keyName:= keyName
+        model.keyPath:= keyPath
+    }
+
+    /*
+        getSubMenuHandle
+
+        Return non-root submenu segments for a model's KeyName. This can be used by the delete action to skip deleting parent submenus, when the resourceRequest file pattern requests to delete items in the parent path for delete but excludes the child path.
+
+        @return SubMenuPartialPath - SubMenu Segments joined by "\". This should match the csv representation for keyName, (It isnt the full registry path, as those have \shell between the key segments)
+    */
+    getSubMenuHandle(ByRef action, ByRef model, skipRoot=false) {
+        if (!model.keyName || !InStr(model.keyName, "\")) {
+            return ""
+        }
+        rootShorthand:= this.getRootAlias(action, model)
+        segments:= StrSplit(model.keyName, "\")
+        if (!(action.writeType = "SubMenu")) {
+            segments.pop() ;last item is a menu item for write types other than SubMenu
+        }
+        if (!skipRoot) {
+            segments.InsertAt(1, rootShortHand)
+        }
+        return CombineArray(segments, "\")
+    }
 }
 global SubMenuUtil:= new SubMenuUtilClass() ;@Export SubMenuUtil
