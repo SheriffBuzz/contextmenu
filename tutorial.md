@@ -3,7 +3,7 @@
 
 [File.csv](/resources/File.csv)
 
-|KeyName                 |Command                                                          |Icon                                           |ContextMenuName       |Extension      |UserChoice                          |filetype|
+|KeyName                 |Command                                                          |IconLocation                                           |DisplayName       |Extension      |UserChoice                          |filetype|
 |------------------------|-----------------------------------------------------------------|-----------------------------------------------|----------------------|---------------|------------------------------------|--------|
 |GIMP                    |"C:\Program Files\GIMP 2\bin\gimp-2.10.exe" "%1"                 |                                               |                      |               |AppX43hnxtbyyps62jhe9sqpdzxn1790zetc|        |
 |GIMP                    |"C:\Program Files\GIMP 2\bin\gimp-2.10.exe" "%1"                 |                                               |                      |.ico           |                                    |        |
@@ -17,15 +17,15 @@
 |z1Copy Path             |CopyFilepath.exe "%V"                                            |%SYSTEMDRIVE%\WINDOWS\system32\SnippingTool.exe|Copy Path             |               |                                    |        |
 |z2Copy Name             |CopyFilenameNoExt.exe                                            |%SYSTEMDRIVE%\WINDOWS\system32\SnippingTool.exe|Copy Name             |               |                                    |        |
 
-  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix the KeyName with a special character or Z. Then, set the display name with **ContextMenuName**
+  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix the KeyName with a special character or Z. Then, set the display name with **DisplayName**
   * Command [**required**] System command, Exe, or path relative to [**\bin**](/bin)
     * Arguments are supported. Pass them in quotes following the executable path.
     * Quoting the exe is optional if the path does not have spaces, but recommended
-  * Icon [**optional**]
+  * IconLocation [**optional**]
     * Extension name - *.{Extension}* in [**\resources\ico\ext\\{extension}.ico**](/resources/ico/ext)
     * IconName.ico in [**\resources\ico**](/resources/ico)
     * Full file path. Environment variables like %PROGRAMFILES% are allowed
-  * ContextMenuName [**optional**] Display name for context menu. Uses KeyName if omitted
+  * DisplayName [**optional**] Display name for context menu. Uses KeyName if omitted
   * Extension [**optional**] - one or more extensions separated by the pipe "|" symbol. Actions will be created on each extension's filetype handler, they are not shared.
   * UserChoice [**optional**]
     * User choice overrides the shell menus of an extension's filetype. Remove the association using FileTypesMan if you do not wish to use it.    
@@ -46,20 +46,20 @@
 
 [Directory.csv](/resources/Directory.csv)
 
-|KeyName                 |Command                                                          |Icon                                           |ContextMenuName       |
+|KeyName                 |Command                                                          |IconLocation                                           |DisplayName       |
 |------------------------|-----------------------------------------------------------------|-----------------------------------------------|----------------------|
 |cmd2                    |"%SYSTEMROOT%\system32\cmd.exe" /s /k pushd "%V"                 |%SYSTEMROOT%\System32\cmd.exe                  |Open with cmd         |
 |zCopy aPath             |CopyFilepath.exe "%V"                                            |%SYSTEMROOT%\system32\SnippingTool.exe         |Copy Path             |
 |zCopy FolderName        |CopyFolderName.exe ""%V"""                                       |%SYSTEMROOT%\system32\SnippingTool.exe         |Copy Name             |
 
-  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix the KeyName with a special character or Z. Then, set the display name with **ContextMenuName**
+  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix the KeyName with a special character or Z. Then, set the display name with **DisplayName**
   * Command [**required**] System command, Exe, or path relative to [**\bin**](/bin)
     * Arguments are supported. Pass them in quotes following the executable path.
     * Quoting the exe is optional if the path does not have spaces, but recommended
-  * Icon [**optional**]
+  * IconLocation [**optional**]
     * IconName.ico in [**\resources\ico**](/resources/ico)
     * Full file path. Environment variables like %PROGRAMFILES% are allowed
-  * ContextMenuName [**optional**] Display name for context menu. Uses KeyName if omitted
+  * DisplayName [**optional**] Display name for context menu. Uses KeyName if omitted
 
 ![DirectoryExplorerView](https://user-images.githubusercontent.com/83767022/182274072-7500902f-be0b-49dc-8ada-c137f84fed7a.png)
 
@@ -67,7 +67,7 @@
 
 [Background.csv](resources/Background.csv)
 
-|KeyName                 |Command                                                          |Icon                                           |ContextMenuName       |
+|KeyName                 |Command                                                          |IconLocation                                           |DisplayName       |
 |------------------------|-----------------------------------------------------------------|-----------------------------------------------|----------------------|
 |cmd2                    |"%SYSTEMROOT%\system32\cmd.exe" /s /k pushd "%V"                 |%SYSTEMROOT%\System32\cmd.exe                  |Open with cmd         |
 |pwshise                 |"%SYSTEMROOT%\system32\cmd.exe" /c start powershell_ise.exe      |%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\powershell_ise.exe|Powershell ISE Here   |
@@ -80,14 +80,14 @@
 |!Toolkit\ToolkitOpenContextMenuResources|ExplorerSelectInWorkspace.exe "%V" "Toolkit" "\registry\contextMenu\resources" "C:"|toolkit.ico                                    |ContextMenu - Resources|
 |!Toolkit\IconDll\imageres|ExplorerSelect.exe "%SystemRoot%\system32\imageres.dll"          |                                               |                      |
 
-  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix the KeyName with a special character or Z. Then, set the display name with **ContextMenuName**
+  * KeyName [**required**] Registry key name. The name of the keys determines the menu order. If you would like to alter the order, prefix the KeyName with a special character or Z. Then, set the display name with **DisplayName**
   * Command [**required**] System command, Exe, or path relative to [**\bin**](/bin)
     * Arguments are supported. Pass them in quotes following the executable path.
     * Quoting the exe is optional if the path does not have spaces, but recommended
-  * Icon [**optional**]
+  * IconLocation [**optional**]
     * IconName.ico in [**\resources\ico**](/resources/ico)
     * Full file path. Environment variables like %PROGRAMFILES% are allowed
-  * ContextMenuName [**optional**] Display name for context menu. Uses KeyName if omitted
+  * DisplayName [**optional**] Display name for context menu. Uses KeyName if omitted
 
 ![BackgroundExplorerView](https://user-images.githubusercontent.com/83767022/182273961-cf600a85-bb41-45a3-ab46-4ee55b5222c0.png)
 
@@ -95,7 +95,7 @@
 
 [SubMenu.csv](resources/SubMenu.csv)
 
-|KeyShorthand|DisplayName                             |Icon       |
+|KeyShorthand|DisplayName                             |IconLocation       |
 |------------|----------------------------------------|-----------|
 |Background\\!Toolkit|Toolkit                                 |toolkit.ico|
 |Background\\!Toolkit\IconDll|IconDll                                 |           |
@@ -112,7 +112,7 @@
       * HKCR\AppX43hnxtbyyps62jhe9sqpdzxn1790zetc\PhotosSubmenu
       * HKCR\Directory\Background\Toolkit
    * DisplayName - name that shows up on menu
-   * Icon [**optional**]
+   * IconLocation [**optional**]
      * Relative link in **\resources\ico**
        * **toolkit.ico**
        * **ext/java.ico**
@@ -153,14 +153,14 @@ Multi Level sub menu definitions are not supported. If you have a submenu that i
 
 [Icon.csv](/resources/Icon.csv)
 
-|extension|Icon                                    |
+|extension|IconLocation                                    |
 |---------|----------------------------------------|
 |.csv     |C:\Program Files\Notepad++\notepad++.exe|
 |.java    |                                        |
 
 
   * Extension
-  * Icon [**optional**] if file exists in [**\resources\ico\ext\\{extension}.ico**](/resources/ico/ext), otherwise [**required**]
+  * IconLocation [**optional**] if file exists in [**\resources\ico\ext\\{extension}.ico**](/resources/ico/ext), otherwise [**required**]
     * Relative link [**\resources\ico\ext\\csv.ico**](/resources/ico/ext/csv.ico)
     * IconName.ico in [**\resources\ico**](/resources/ico)
     * Full file path. Environment variables like %PROGRAMFILES% are allowed
@@ -181,3 +181,17 @@ Multi Level sub menu definitions are not supported. If you have a submenu that i
   * Menu Description [**optional**] Display name for context menu. Appropriate name will be given if omitted.
 
 ![NewFile](https://user-images.githubusercontent.com/83767022/182247535-4efb6e68-7c5c-45d1-8975-60aafbbac0ff.png)
+
+# Delete
+[Delete.csv](resources/Delete.csv)
+
+|WriteTypes|
+|----------|
+|SubMenu   |
+|Directory |
+|Background|
+|File      |
+|NewFile   |
+
+* WriteTypes [**Optional**] Names of Actions, whose menu entries in the cooresponding csv files will be deleted.
+  * Supported actions for delete are SubMenu, Directory, Background, File, NewFile
